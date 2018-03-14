@@ -182,7 +182,8 @@ public class PostgresDriver implements DatasourceDriverInt {
 		Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		ResultSet rs = stmt.executeQuery(sql);
 
-		rs.last(); 
+		if(!rs.last())
+			throw new SQLException("ResultSet.last failed"); 
 		int numRighe = rs.getRow();
 		rs.beforeFirst();
 		ResultSetMetaData rsmd = rs.getMetaData();
@@ -236,8 +237,7 @@ public class PostgresDriver implements DatasourceDriverInt {
 		for (int i=0;i<objects.size();i++)
 		{
 			Map<String, Object> object=objects.get(i);
-			if(object.get("tablename")!=null)
-				if(object.get("tablename").equals(name))
+			if(object.get("tablename")!=null&&object.get("tablename").equals(name))				
 					return true;
 		}
 		
