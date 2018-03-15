@@ -24,6 +24,7 @@ public class PostgresDriver implements DatasourceDriverInt {
 	String port;
 	String url;
 	String database;
+	String schema;
 	DatasourceTypeInt datasourceType;
 	List<Map<String, Object>> objects=null;
 	private static String sqlWords[]={"select","from","where","group", "by","create", "table","update","on","delete","drop","index","replace","trigger",
@@ -45,9 +46,11 @@ public class PostgresDriver implements DatasourceDriverInt {
 
 	@Override
 	public void connect() {
-		// TODO Auto-generated method stub
+		
 		conn = null;
 		String connectionUrl="jdbc:postgresql://"+url+":"+port+"/"+database;
+		if(schema!=null)
+			connectionUrl+="?currentSchema="+schema;
 		try {
 			conn = DriverManager.getConnection(connectionUrl, username, password);
 			conn.setAutoCommit(false);
@@ -60,19 +63,22 @@ public class PostgresDriver implements DatasourceDriverInt {
 	}
 
 	@Override
-	public void connect(String url, String port, String username, String password, int ciao) throws SQLException {
-		// TODO Auto-generated method stub
-		conn = null;
-		String connectionUrl="jdbc:postgresql://"+url+":"+port+"/"+database;
-		
-			conn = DriverManager.getConnection(connectionUrl, username, password);
-			conn.setAutoCommit(false);
-			populateObjects();
-			System.out.println("Connected AJEJE to the PostgreSQL server successfully.");
-			
-			
-		
+	public void connect(String url, String port, String username, String password, String schema, String database) throws SQLException {
 
+		conn = null;
+		this.url=url;
+		this.port=port;
+		this.username=username;
+		this.password=password;
+		this.schema=schema;
+		this.database=database;
+		String connectionUrl="jdbc:postgresql://"+url+":"+port+"/"+database;
+		if(schema!=null)
+			connectionUrl+="?searchpath="+schema;
+		conn = DriverManager.getConnection(connectionUrl, username, password);
+		conn.setAutoCommit(false);
+		populateObjects();
+		System.out.println("Connected to the PostgreSQL server successfully.");
 
 	}
 
@@ -141,23 +147,35 @@ public class PostgresDriver implements DatasourceDriverInt {
 		return this.password;
 	}
 
+	@Override 
+	public void setSchema(String schema)
+	{
+		this.schema=schema;
+	}
+
+	@Override
+	public String getSchema()
+	{
+		return this.schema;
+	}
+
 	@Override
 	public List<Map<String, Object>> executeQuery(String sql) throws SQLException {
 		// TODO Auto-generated method stub
 		List<Map<String, Object>> results=new ArrayList<Map<String, Object>>();	
 
-		
-			//Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			if(sql.toUpperCase().startsWith("SELECT"))
-				results=executeSelect(sql);
-			else if(sql.toUpperCase().startsWith("INSERT")||sql.toUpperCase().startsWith("UPDATE")||sql.toUpperCase().startsWith("DELETE"))
-				results=executeUpdate(sql);
-			else
-				results=executeDDL(sql);
+
+		//Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		if(sql.toUpperCase().startsWith("SELECT"))
+			results=executeSelect(sql);
+		else if(sql.toUpperCase().startsWith("INSERT")||sql.toUpperCase().startsWith("UPDATE")||sql.toUpperCase().startsWith("DELETE"))
+			results=executeUpdate(sql);
+		else
+			results=executeDDL(sql);
 
 
 
-		
+
 
 		return results;
 	}
@@ -195,10 +213,10 @@ public class PostgresDriver implements DatasourceDriverInt {
 			results.add(resultRow);
 			riga++;
 		}
-		
+
 		return results;
 	}
-	
+
 	private List<Map<String, Object>> executeUpdate(String sql) throws SQLException
 	{
 		Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -209,28 +227,34 @@ public class PostgresDriver implements DatasourceDriverInt {
 		results.add(numRighe);
 		return results;
 	}
-	
+
 	private List<Map<String, Object>> executeDDL(String sql) throws SQLException
 	{
 		Statement stmt = conn.createStatement();
 		stmt.execute(sql);
 		List<Map<String, Object>> results=new ArrayList<Map<String, Object>>();
-		
+
 		Map<String,Object> numRighe=new HashMap<String,Object>();
 		numRighe.put("risultato","Successo");
 		results.add(numRighe);
 		return results;
 	}
-	
+
 	private void populateObjects() throws SQLException
 	{
 		/*tables*/
-		
-		String sql="select * from pg_catalog.pg_tables";
+
+		populateObjects(schema);
+
+	}
+	
+	public void populateObjects(String schema) throws SQLException
+	{
+		String sql="select * from pg_catalog.pg_tables where schemaname='"+schema+"'";
 		objects=executeSelect(sql);
 		
 	}
-	
+
 	public Boolean containsObject(String name)
 	{
 		/*in tables*/
@@ -238,12 +262,12 @@ public class PostgresDriver implements DatasourceDriverInt {
 		{
 			Map<String, Object> object=objects.get(i);
 			if(object.get("tablename")!=null&&object.get("tablename").equals(name))				
-					return true;
+				return true;
 		}
-		
+
 		return false;
 	}
-	
+
 	@Override
 	public Boolean isDbReservedWord(String word)
 	{
@@ -254,24 +278,24 @@ public class PostgresDriver implements DatasourceDriverInt {
 		}
 		return false;
 	}
-	
+
 	public List<String> getReservedWords()
 	{
 		return Arrays.asList(sqlWords);
 	}
-	
+
 	public List<String> getObjWords()
 	{
 		List<String> obj=new ArrayList<String>();
 		for(int i=0;i<objects.size();i++)
 			obj.add((String)objects.get(i).get("tablename"));
 		return obj;
-		
+
 	}
-	
-	
-	
-	
+
+
+
+
 
 
 }

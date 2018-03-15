@@ -19,7 +19,7 @@ public interface DatasourceDriverInt {
 	
 	public void connect ();
 	
-	public void connect(String url, String port, String username, String password, int ciao) throws SQLException;
+	public void connect(String url, String port, String username, String password, String schema, String database) throws SQLException;
 	
 	public void setUsername(String username);
 	
@@ -29,6 +29,8 @@ public interface DatasourceDriverInt {
 	
 	public void setPort(String port);
 	
+	public void setSchema(String schema);
+	
 	public String getPort();
 	
 	public String getUrl();
@@ -36,6 +38,8 @@ public interface DatasourceDriverInt {
 	public String getUsername();
 	
 	public String getPassword();
+	
+	public String getSchema();
 	
 	public void disconnect();
 	
@@ -51,5 +55,7 @@ public interface DatasourceDriverInt {
 	public List<String> getReservedWords();
 	
 	public List<String> getObjWords();
+	
+	public void populateObjects(String schema) throws SQLException;
 
 }

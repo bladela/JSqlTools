@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -19,6 +20,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.table.AbstractTableModel;
@@ -29,6 +31,7 @@ import javax.swing.text.StyleContext;
 import datasource.driver.DatasourceDriverInt;
 import datasource.driver.impl.PostgresDriver;
 import datasource.type.DatasourceTypeInt;
+import datasource.type.impl.Postgresql;
 import jsyntaxpane.DefaultSyntaxKit;
 import jsyntaxpane.util.StringUtils;
 import util.style.KeywordStyledDocument;
@@ -46,10 +49,14 @@ public class TabPanel extends JSplitPane {
 	Style defaultStyle=null;
 	Style cwStyle=null;
 	Style objStyle=null;
+	JTabbedPane parent=null;
 	
-	public TabPanel(int width, int height, DatasourceTypeInt dbType)
+	
+	
+	public TabPanel(int width, int height, DatasourceTypeInt dbType, JTabbedPane parent)
 	{
 		super(JSplitPane.VERTICAL_SPLIT);
+		this.parent=parent;
 		//this.setSize(width, height);
 		setDatasource(dbType);
 		styleContext = new StyleContext();
@@ -69,7 +76,8 @@ public class TabPanel extends JSplitPane {
 		JPanel panel_3 = new JPanel();
 		panel_3.setPreferredSize(new Dimension(500, 30));
 		
-		FlowLayout flowLayout = (FlowLayout) panel_3.getLayout();
+		BorderLayout borderLayout = new BorderLayout(0,0);
+		panel_3.setLayout(borderLayout);
 		//this.add(panel_3, BorderLayout.SOUTH);
 		this.setBottomComponent(panel_3);
 		this.setDividerSize(3);
@@ -77,7 +85,8 @@ public class TabPanel extends JSplitPane {
 		
 		
 		table = new JTable();
-		panel_3.add(table);
+		JScrollPane pane=new JScrollPane(table);
+		panel_3.add(pane,BorderLayout.CENTER);
 		
 		JPanel panel_4 = new JPanel();
 		panel_4.setSize(width, height-50);
@@ -108,6 +117,7 @@ public class TabPanel extends JSplitPane {
 			driver.setUrl("localhost");
 			driver.setPort("5432");
 			driver.setDatabase("springagenda");
+			driver.setSchema("agenda");
 			driver.connect();
 		}
 	}
@@ -160,6 +170,7 @@ public class TabPanel extends JSplitPane {
 	
 	private void updateTable(List<Map<String,Object>> data)
 	{
+		//table= new JTable();
 		Object [] columnNames=data.get(0).keySet().toArray();
 		ResultQueryTableModel model=new ResultQueryTableModel();
 		model.setColumnNames(columnNames);
@@ -189,8 +200,13 @@ public class TabPanel extends JSplitPane {
 		}
 		model.setData(datas);
 		table.setModel(model);
+		
 	}
 	
+	public void notifyNewTab()
+	{
+		parent.addTab("<html><body><table width='100'><tr><td><b>New Tab</b></td></tr></table></body></html>",new TabPanel(this.getWidth(), this.getHeight(), new Postgresql(),parent));
+	}
 
 }
 
@@ -225,6 +241,10 @@ class DetectSql implements KeyListener
 			System.out.println("key pressed : F5");
 			panel.executeFullText();
 		}
+		if ((e.getKeyCode() == KeyEvent.VK_N) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
+            System.out.println("woot!");
+            panel.notifyNewTab();
+        }
 			
 	}
 
@@ -276,18 +296,24 @@ class ResultQueryTableModel extends AbstractTableModel
 {
 	private Object rowData[][]=null;
 	private Object columnNames[]=null;
+	
     public String getColumnName(int col) {
         return columnNames[col].toString();
     }
     
+    
     public void setColumnNames(Object[] columnNames)
     {
     	this.columnNames=columnNames;
+    	this.fireTableDataChanged();
     }
     
     public void setData(Object[][] data)
     {
-    	rowData=data;    	
+    	rowData=null;
+    	rowData=data;  
+    	this.fireTableDataChanged();  	
+    	
     }
     
     
@@ -297,7 +323,7 @@ class ResultQueryTableModel extends AbstractTableModel
         return rowData[row][col];
     }
     public boolean isCellEditable(int row, int col)
-        { return true; }
+        { return false; }
     
     public void setValueAt(Object value, int row, int col) {
         rowData[row][col] = value;
