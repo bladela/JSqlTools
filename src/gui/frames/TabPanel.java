@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,8 +33,10 @@ import datasource.driver.DatasourceDriverInt;
 import datasource.driver.impl.PostgresDriver;
 import datasource.type.DatasourceTypeInt;
 import datasource.type.impl.Postgresql;
+import gui.tables.models.ResultQueryTableModel;
 import jsyntaxpane.DefaultSyntaxKit;
 import jsyntaxpane.util.StringUtils;
+import swing.workers.DbConnectionSwingWorker;
 import util.style.KeywordStyledDocument;
 
 public class TabPanel extends JSplitPane {
@@ -44,7 +47,7 @@ public class TabPanel extends JSplitPane {
 	private static final long serialVersionUID = 1L;
 	private JTable table;
 	JTextPane textArea=null;
-	DatasourceDriverInt driver=null;
+	private DbConnectionSwingWorker driver=null;
 	StyleContext styleContext=null;
 	Style defaultStyle=null;
 	Style cwStyle=null;
@@ -109,18 +112,23 @@ public class TabPanel extends JSplitPane {
 	
 	private void setDatasource(DatasourceTypeInt dbType)
 	{
+		DatasourceDriverInt dbDriver=null;
 		if(dbType.getDatasourceName().equals("PostgreSQL"))
 		{
-			driver=new PostgresDriver();
-			driver.setUsername("bladela");
-			driver.setPassword("satana");
-			driver.setUrl("localhost");
-			driver.setPort("5432");
-			driver.setDatabase("springagenda");
-			driver.setSchema("agenda");
-			driver.connect();
+			dbDriver=new PostgresDriver();
+			dbDriver.setUsername("bladela");
+			dbDriver.setPassword("satana");
+			dbDriver.setUrl("localhost");
+			dbDriver.setPort("5432");
+			dbDriver.setDatabase("springagenda");
+			dbDriver.setSchema("agenda");
+			dbDriver.connect();
+			driver=new DbConnectionSwingWorker(this,dbDriver);
+			
 		}
 	}
+	
+	
 	
 	public void disconnect()
 	{
@@ -132,22 +140,15 @@ public class TabPanel extends JSplitPane {
 		return textArea.getText();
 	}
 	
-	protected Boolean dbContainObject(String name)
-	{
-		return driver.containsObject(name);
-	}
+	
 	
 	protected void highlightDbObjects(String text)
 	{
 		textArea.setText(text);
 	}
 	
-	protected Boolean isDbReserverWord(String text)
-	{
-		return driver.isDbReservedWord(text);
-	}
 	
-	public void executeFullText() 
+	/*public void executeFullText() 
 	{
 		String text=this.getText();
 		List<String> queries=Arrays.asList(text.split(";"));
@@ -166,7 +167,7 @@ public class TabPanel extends JSplitPane {
 		}
 		
 		
-	}
+	}*/
 	
 	private void updateTable(List<Map<String,Object>> data)
 	{
@@ -203,9 +204,24 @@ public class TabPanel extends JSplitPane {
 		
 	}
 	
+	public void updateTableData(AbstractTableModel model)
+	{
+		table.setModel(model);		
+	}
+	
 	public void notifyNewTab()
 	{
 		parent.addTab("<html><body><table width='100'><tr><td><b>New Tab</b></td></tr></table></body></html>",new TabPanel(this.getWidth(), this.getHeight(), new Postgresql(),parent));
+	}
+	
+	public DbConnectionSwingWorker getDatasource()
+	{
+		return this.driver;
+	}
+	
+	public DbConnectionSwingWorker getDriver()
+	{
+		return driver;
 	}
 
 }
@@ -239,7 +255,9 @@ class DetectSql implements KeyListener
 		if(e.getKeyCode()==e.VK_F5)
 		{
 			System.out.println("key pressed : F5");
-			panel.executeFullText();
+			panel.getDriver().setSql(panel.getText());
+			panel.getDriver().execute();
+			//panel.executeFullText();
 		}
 		if ((e.getKeyCode() == KeyEvent.VK_N) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
             System.out.println("woot!");
@@ -292,41 +310,3 @@ class DetectSql implements KeyListener
 	
 }
 
-class ResultQueryTableModel extends AbstractTableModel
-{
-	private Object rowData[][]=null;
-	private Object columnNames[]=null;
-	
-    public String getColumnName(int col) {
-        return columnNames[col].toString();
-    }
-    
-    
-    public void setColumnNames(Object[] columnNames)
-    {
-    	this.columnNames=columnNames;
-    	this.fireTableDataChanged();
-    }
-    
-    public void setData(Object[][] data)
-    {
-    	rowData=null;
-    	rowData=data;  
-    	this.fireTableDataChanged();  	
-    	
-    }
-    
-    
-    public int getRowCount() { return rowData.length; }
-    public int getColumnCount() { return columnNames.length; }
-    public Object getValueAt(int row, int col) {
-        return rowData[row][col];
-    }
-    public boolean isCellEditable(int row, int col)
-        { return false; }
-    
-    public void setValueAt(Object value, int row, int col) {
-        rowData[row][col] = value;
-        fireTableCellUpdated(row, col);
-    }
-}

@@ -13,11 +13,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Vector;
+import java.util.concurrent.ExecutionException;
+
+import javax.swing.SwingWorker;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
 
 import datasource.driver.DatasourceDriverInt;
 import datasource.type.DatasourceTypeInt;
+import gui.frames.TabPanel;
+import gui.tables.models.ResultQueryTableModel;
 
-public class PostgresDriver implements DatasourceDriverInt {
+public class PostgresDriver implements DatasourceDriverInt  {
 
 	String username;
 	String password;
@@ -29,8 +37,12 @@ public class PostgresDriver implements DatasourceDriverInt {
 	List<Map<String, Object>> objects=null;
 	private static String sqlWords[]={"select","from","where","group", "by","create", "table","update","on","delete","drop","index","replace","trigger",
 			"alter","declare","if","while","end","insert","into","values","loop","drop","view","sequence","user","execute", "order"};
-
+	
 	Connection conn;
+	
+	
+	
+	
 
 	@Override
 	public void setDatasourceType(DatasourceTypeInt type) {
@@ -292,6 +304,8 @@ public class PostgresDriver implements DatasourceDriverInt {
 		return obj;
 
 	}
+
+	
 
 
 

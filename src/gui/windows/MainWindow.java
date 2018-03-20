@@ -24,6 +24,8 @@ import javax.swing.JTextPane;
 import javax.swing.plaf.metal.MetalTabbedPaneUI;
 
 import datasource.type.impl.Postgresql;
+import gui.events.ConnectionButtonMouseListener;
+import gui.events.MainWindowEventAdapter;
 import gui.frames.TabPanel;
 import jsyntaxpane.DefaultSyntaxKit;
 
@@ -32,6 +34,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +92,7 @@ public class MainWindow {
 		panel_1.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
 		JButton btnTest = new JButton("Test1");
+		btnTest.addMouseListener(new ConnectionButtonMouseListener());
 		panel_1.add(btnTest);
 
 		panel = new JPanel();
@@ -115,21 +119,7 @@ public class MainWindow {
 		frame.setJMenuBar(menuBar);
 		createMenu(menuBar);
 
-		frame.addWindowListener(new java.awt.event.WindowAdapter() {
-			public void windowClosing(WindowEvent winEvt) {
-				for(int i=0;i<tabbedPane.getTabCount();i++)
-				{
-					if(tabbedPane.getComponentAt(i).getClass()==TabPanel.class)
-					{
-						TabPanel tab=((TabPanel)tabbedPane.getComponentAt(i));
-						if(tab!=null)
-							tab.disconnect();
-					}
-				}
-				System.exit(0);
-			}
-
-		});
+		frame.addWindowListener(new MainWindowEventAdapter(tabbedPane));
 
 
 
@@ -229,8 +219,7 @@ class CustomTabbedPaneUI extends MetalTabbedPaneUI
             if (xRect.contains(e.getPoint())) {
                JTabbedPane tabPane = (JTabbedPane)e.getSource();
                int tabIndex = tabForCoordinate(tabPane, e.getX(), e.getY());
-               System.out.println(tabIndex+" "+tabPane.getTabCount());
-               System.out.println(tabPane.getTabComponentAt(tabIndex));
+
                if(tabPane.getComponentAt(tabIndex)!=null)
             	   ((TabPanel)tabPane.getComponentAt(tabIndex)).disconnect();
                tabPane.remove(tabIndex);
