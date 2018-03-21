@@ -16,6 +16,7 @@ public class DbConnectionSwingWorker extends SwingWorker<ResultQueryTableModel, 
 	private List<String> sql;
 	private TabPanel panel;
 	private DatasourceDriverInt driver;
+	
 		
 	
 	public DbConnectionSwingWorker(TabPanel panel, DatasourceDriverInt driver)
@@ -24,12 +25,20 @@ public class DbConnectionSwingWorker extends SwingWorker<ResultQueryTableModel, 
 		this.driver=driver;
 	}
 	
+	public DatasourceDriverInt getDriver()
+	{
+		return driver;
+	}
+	
 	@Override
     protected ResultQueryTableModel doInBackground() throws Exception {
 		ResultQueryTableModel model = new ResultQueryTableModel();
+		System.out.println("background");
 		for (String query:sql)
 		{
 	        List<Map<String, Object>> rowData = driver.executeQuery(query);
+	        System.out.println(query);
+	        System.out.println(rowData.size());
 	        Object[] columnNames=rowData.get(0).keySet().toArray();      
 	
 	        
@@ -96,3 +105,4 @@ public class DbConnectionSwingWorker extends SwingWorker<ResultQueryTableModel, 
 	}
 
 }
+

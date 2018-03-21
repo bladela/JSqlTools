@@ -33,6 +33,7 @@ import datasource.driver.DatasourceDriverInt;
 import datasource.driver.impl.PostgresDriver;
 import datasource.type.DatasourceTypeInt;
 import datasource.type.impl.Postgresql;
+import datasource.util.DatasourceLoginInfo;
 import gui.tables.models.ResultQueryTableModel;
 import jsyntaxpane.DefaultSyntaxKit;
 import jsyntaxpane.util.StringUtils;
@@ -53,6 +54,10 @@ public class TabPanel extends JSplitPane {
 	Style cwStyle=null;
 	Style objStyle=null;
 	JTabbedPane parent=null;
+	private DatasourceLoginInfo dbLoginInfo=null;
+	DatasourceTypeInt dbType=null;
+	
+	JPanel panelText;
 	
 	
 	
@@ -61,18 +66,9 @@ public class TabPanel extends JSplitPane {
 		super(JSplitPane.VERTICAL_SPLIT);
 		this.parent=parent;
 		//this.setSize(width, height);
-		setDatasource(dbType);
-		styleContext = new StyleContext();
-        defaultStyle = styleContext.getStyle(StyleContext.DEFAULT_STYLE);
-        cwStyle = styleContext.addStyle("ConstantWidth", null);
-        objStyle = styleContext.addStyle("ConstantWidth", null);
-        StyleConstants.setForeground(cwStyle, Color.BLUE);
-        StyleConstants.setBold(cwStyle, true);
-        StyleConstants.setForeground(objStyle, Color.RED);
-        StyleConstants.setBold(objStyle, true);
-        KeywordStyledDocument styledDocument=new KeywordStyledDocument(defaultStyle, cwStyle,objStyle);
-        KeywordStyledDocument.setReservedWords(driver.getReservedWords());
-        KeywordStyledDocument.setObjWords(driver.getObjWords());
+		//setDatasource(dbType);
+		this.dbType=dbType;
+		
 		
 		//this.setLayout(new BorderLayout(0, 0));
 		
@@ -91,23 +87,24 @@ public class TabPanel extends JSplitPane {
 		JScrollPane pane=new JScrollPane(table);
 		panel_3.add(pane,BorderLayout.CENTER);
 		
-		JPanel panel_4 = new JPanel();
-		panel_4.setSize(width, height-50);
+		panelText = new JPanel();
+		panelText.setSize(width, height-50);
 		//this.add(panel_4, BorderLayout.CENTER);
-		this.setTopComponent(panel_4);
-		panel_4.setLayout(new BorderLayout(0, 0));
+		this.setTopComponent(panelText);
+		panelText.setLayout(new BorderLayout(0, 0));
 		
 		
 		//DefaultSyntaxKit.initKit();
 		
-		textArea = new JTextPane(styledDocument);
-		textArea.addKeyListener(new DetectSql(this));
-		//textArea.setContentType("text/html");
-		JScrollPane scrPane = new JScrollPane(textArea);
-		//textArea.setContentType("text/sql");
-		panel_4.add(scrPane, BorderLayout.CENTER);
 		
 		
+		
+	}
+	
+	public void setDbLoginInfo(DatasourceLoginInfo info)
+	{
+		this.dbLoginInfo=info;
+		setDatasource(this.dbType);
 	}
 	
 	private void setDatasource(DatasourceTypeInt dbType)
@@ -116,17 +113,42 @@ public class TabPanel extends JSplitPane {
 		if(dbType.getDatasourceName().equals("PostgreSQL"))
 		{
 			dbDriver=new PostgresDriver();
-			dbDriver.setUsername("bladela");
-			dbDriver.setPassword("satana");
-			dbDriver.setUrl("localhost");
-			dbDriver.setPort("5432");
-			dbDriver.setDatabase("springagenda");
-			dbDriver.setSchema("agenda");
+			dbDriver.setUsername(dbLoginInfo.getUsername());
+			dbDriver.setPassword(dbLoginInfo.getPassword());
+			dbDriver.setUrl(dbLoginInfo.getUrl());
+			dbDriver.setPort(dbLoginInfo.getPort());
+			dbDriver.setDatabase(dbLoginInfo.getDatabase());
+			dbDriver.setSchema(dbLoginInfo.getSchema());
 			dbDriver.connect();
 			driver=new DbConnectionSwingWorker(this,dbDriver);
+			initFormat();
 			
 		}
 	}
+	
+	private void initFormat()
+	{
+		styleContext = new StyleContext();
+        defaultStyle = styleContext.getStyle(StyleContext.DEFAULT_STYLE);
+        cwStyle = styleContext.addStyle("ConstantWidth", null);
+        objStyle = styleContext.addStyle("ConstantWidth", null);
+        StyleConstants.setForeground(cwStyle, Color.BLUE);
+        StyleConstants.setBold(cwStyle, true);
+        StyleConstants.setForeground(objStyle, Color.RED);
+        StyleConstants.setBold(objStyle, true);
+        KeywordStyledDocument styledDocument=new KeywordStyledDocument(defaultStyle, cwStyle,objStyle);
+        KeywordStyledDocument.setReservedWords(driver.getReservedWords());
+        KeywordStyledDocument.setObjWords(driver.getObjWords());
+        
+        textArea = new JTextPane(styledDocument);
+		textArea.addKeyListener(new DetectSql(this));
+		//textArea.setContentType("text/html");
+		JScrollPane scrPane = new JScrollPane(textArea);
+		//textArea.setContentType("text/sql");
+		panelText.add(scrPane, BorderLayout.CENTER);
+	}
+	
+	
 	
 	
 	
@@ -211,7 +233,9 @@ public class TabPanel extends JSplitPane {
 	
 	public void notifyNewTab()
 	{
-		parent.addTab("<html><body><table width='100'><tr><td><b>New Tab</b></td></tr></table></body></html>",new TabPanel(this.getWidth(), this.getHeight(), new Postgresql(),parent));
+		TabPanel panel=new TabPanel(this.getWidth(), this.getHeight(), new Postgresql(),parent);
+		panel.setDbLoginInfo(this.dbLoginInfo);
+		parent.addTab("<html><body><table width='100'><tr><td><b>New Tab</b></td></tr></table></body></html>",panel);
 	}
 	
 	public DbConnectionSwingWorker getDatasource()
@@ -223,12 +247,19 @@ public class TabPanel extends JSplitPane {
 	{
 		return driver;
 	}
+	
+	protected DbConnectionSwingWorker resetSwingWorker()
+	{
+		driver=new DbConnectionSwingWorker(this,driver.getDriver());
+		return driver;
+	}
 
 }
 
 class DetectSql implements KeyListener
 {
 	TabPanel panel=null;
+	
 	
 	public DetectSql(TabPanel p)
 	{
@@ -255,6 +286,8 @@ class DetectSql implements KeyListener
 		if(e.getKeyCode()==e.VK_F5)
 		{
 			System.out.println("key pressed : F5");
+			System.out.println("text :"+panel.getText());
+			panel.resetSwingWorker();
 			panel.getDriver().setSql(panel.getText());
 			panel.getDriver().execute();
 			//panel.executeFullText();

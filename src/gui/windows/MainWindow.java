@@ -24,6 +24,7 @@ import javax.swing.JTextPane;
 import javax.swing.plaf.metal.MetalTabbedPaneUI;
 
 import datasource.type.impl.Postgresql;
+import datasource.util.DatasourceLoginInfo;
 import gui.events.ConnectionButtonMouseListener;
 import gui.events.MainWindowEventAdapter;
 import gui.frames.TabPanel;
@@ -103,7 +104,9 @@ public class MainWindow {
 		panel.add(tabbedPane, BorderLayout.CENTER);
 
 		panel_2 = new ArrayList<TabPanel>();
-		panel_2.add(new TabPanel(basicWidth, basicHeight, new Postgresql(),tabbedPane));
+		TabPanel firstPanel=new TabPanel(basicWidth, basicHeight, new Postgresql(),tabbedPane);
+		firstPanel.setDbLoginInfo(new DatasourceLoginInfo("bladela","satana","agenda","springagenda","5432","localhost"));
+		panel_2.add(firstPanel);
 		
 		
 		tabbedPane.add("<html><body><table width='100'><tr><td>New Tab</td></tr></table></body></html>",  panel_2.get(0));
