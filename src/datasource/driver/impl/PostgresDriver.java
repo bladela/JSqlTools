@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.TreeMap;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
@@ -39,6 +40,7 @@ public class PostgresDriver implements DatasourceDriverInt  {
 			"alter","declare","if","while","end","insert","into","values","loop","drop","view","sequence","user","execute", "order"};
 	
 	Connection conn;
+	private ResourceBundle rb;
 	
 	
 	
@@ -48,6 +50,11 @@ public class PostgresDriver implements DatasourceDriverInt  {
 	public void setDatasourceType(DatasourceTypeInt type) {
 
 		this.datasourceType=type;
+	}
+	
+	public void setRB(ResourceBundle rb)
+	{
+		this.rb=rb;
 	}
 
 	@Override
@@ -128,14 +135,15 @@ public class PostgresDriver implements DatasourceDriverInt  {
 	}
 
 	@Override
-	public void commit() {
+	public void commit() throws SQLException {
 		// TODO Auto-generated method stub
-
+		this.executeQuery("commit");
 	}
 
 	@Override
-	public void rollback() {
+	public void rollback() throws SQLException {
 		// TODO Auto-generated method stub
+		this.executeQuery("rollback");
 
 	}
 
@@ -213,7 +221,7 @@ public class PostgresDriver implements DatasourceDriverInt  {
 		ResultSet rs = stmt.executeQuery(sql);
 
 		if(!rs.last())
-			throw new SQLException("ResultSet.last failed"); 
+			return results;
 		int numRighe = rs.getRow();
 		rs.beforeFirst();
 		ResultSetMetaData rsmd = rs.getMetaData();
@@ -235,7 +243,7 @@ public class PostgresDriver implements DatasourceDriverInt  {
 		stmt.executeUpdate(sql);
 		List<Map<String, Object>> results=new ArrayList<Map<String, Object>>();
 		Map<String,Object> numRighe=new HashMap<String,Object>();
-		numRighe.put("Righe aggiornate",stmt.getUpdateCount());
+		numRighe.put(rb.getString("update.rowcount"),stmt.getUpdateCount());
 		results.add(numRighe);
 		return results;
 	}
@@ -247,7 +255,7 @@ public class PostgresDriver implements DatasourceDriverInt  {
 		List<Map<String, Object>> results=new ArrayList<Map<String, Object>>();
 
 		Map<String,Object> numRighe=new HashMap<String,Object>();
-		numRighe.put("risultato","Successo");
+		numRighe.put(rb.getString("ddl.result.title"),rb.getString("ddl.result.success"));
 		results.add(numRighe);
 		return results;
 	}

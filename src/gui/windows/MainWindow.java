@@ -9,6 +9,7 @@ import java.awt.BorderLayout;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 
@@ -40,6 +41,8 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -57,9 +60,10 @@ public class MainWindow {
 	JPanel panel_1=null;
 	JTabbedPane tabbedPane=null;
 	List<TabPanel> panel_2=null;
+	ImageIcon connectToDb=new ImageIcon("images/connect_to_db.png");
 
 	JMenuBar menuBar=null;
-
+	ResourceBundle rb = ResourceBundle.getBundle("gui.windows.JSqlTools", Locale.getDefault());
 
 
 	public void setVisible(Boolean visible)
@@ -84,6 +88,8 @@ public class MainWindow {
 	 */
 	private void initialize() {
 		frame = new JFrame();
+		
+		frame.setTitle(rb.getString("main.title"));
 		frame.setBounds(100, 100, basicWidth, basicHeight);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new BorderLayout(0, 0));
@@ -92,7 +98,10 @@ public class MainWindow {
 		frame.getContentPane().add(panel_1, BorderLayout.NORTH);
 		panel_1.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
-		JButton btnTest = new JButton("Test1");
+		JButton btnTest = new JButton(connectToDb);
+		btnTest.setPreferredSize(new Dimension(32,32));
+		btnTest.setToolTipText(rb.getString("connect.tooltip"));
+
 		btnTest.addMouseListener(new ConnectionButtonMouseListener());
 		panel_1.add(btnTest);
 
@@ -104,19 +113,19 @@ public class MainWindow {
 		panel.add(tabbedPane, BorderLayout.CENTER);
 
 		panel_2 = new ArrayList<TabPanel>();
-		TabPanel firstPanel=new TabPanel(basicWidth, basicHeight, new Postgresql(),tabbedPane);
+		TabPanel firstPanel=new TabPanel(basicWidth, basicHeight, new Postgresql(),tabbedPane,rb);
 		firstPanel.setDbLoginInfo(new DatasourceLoginInfo("bladela","satana","agenda","springagenda","5432","localhost"));
 		panel_2.add(firstPanel);
-		
-		
-		tabbedPane.add("<html><body><table width='100'><tr><td>New Tab</td></tr></table></body></html>",  panel_2.get(0));
-		
-		
 
-		tabbedPane.addKeyListener(new TabActionListener(tabbedPane));
+
+		tabbedPane.add("<html><body><table width='100'><tr><td>New Tab</td></tr></table></body></html>",  panel_2.get(0));
+
+
+
+		tabbedPane.addKeyListener(new TabActionListener(tabbedPane,rb));
 
 		tabbedPane.setUI(new CustomTabbedPaneUI());
-		
+
 
 		menuBar = new JMenuBar();
 		frame.setJMenuBar(menuBar);
@@ -131,14 +140,14 @@ public class MainWindow {
 
 	private void createMenu(JMenuBar menuBar)
 	{
-		JMenu mnFile = new JMenu("File");
+		JMenu mnFile = new JMenu(rb.getString("menu.title.file"));
 		menuBar.add(mnFile);
 
-		JMenuItem mntmExit = new JMenuItem("Exit");
+		JMenuItem mntmExit = new JMenuItem(rb.getString("menu.item.file.exit"));
 		mntmExit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				for(int i=0;i<tabbedPane.getTabCount();i++)
-					((TabPanel)tabbedPane.getTabComponentAt(i)).disconnect();
+					((TabPanel)tabbedPane.getComponentAt(i)).disconnect();
 				System.exit(0);
 			}
 		});
@@ -151,10 +160,12 @@ public class MainWindow {
 class TabActionListener implements KeyListener
 {
 	JTabbedPane panel=null;
+	ResourceBundle rb;
 
-	public TabActionListener(JTabbedPane p)
+	public TabActionListener(JTabbedPane p, ResourceBundle rb)
 	{
 		this.panel=p;
+		this.rb=rb;
 	}
 
 	@Override
@@ -172,7 +183,7 @@ class TabActionListener implements KeyListener
 		// TODO Auto-generated method stub
 		if ((e.getKeyCode() == KeyEvent.VK_N) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
 			System.out.println("woot!");
-			panel.addTab("<html><body><table width='100'><tr><td><b>New Tab</b></td></tr></table></body></html>",new TabPanel(panel.getWidth(), panel.getHeight(), new Postgresql(),panel));
+			panel.addTab(rb.getString("tab.defaulttitle"),new TabPanel(panel.getWidth(), panel.getHeight(), new Postgresql(),panel,rb));
 		}
 
 	}
@@ -189,52 +200,52 @@ class TabActionListener implements KeyListener
 
 class CustomTabbedPaneUI extends MetalTabbedPaneUI
 {
-   Rectangle xRect;
-  
-   protected void installListeners() {
-      super.installListeners();
-      tabPane.addMouseListener(new MyMouseHandler());
-      
-   }
-  
-   protected void paintTab(Graphics g, int tabPlacement,
-                           Rectangle[] rects, int tabIndex,
-                           Rectangle iconRect, Rectangle textRect) {
-      super.paintTab(g, tabPlacement, rects, tabIndex, iconRect, textRect);
-      
-      Font f = g.getFont();
-      g.setFont(new Font("Courier", Font.BOLD, 10));
-      FontMetrics fm = g.getFontMetrics(g.getFont());
-      int charWidth = fm.charWidth('x');
-      int maxAscent = fm.getMaxAscent();
-      g.drawString("x", textRect.x + textRect.width - 3, textRect.y + textRect.height - 3);
-      g.drawRect(textRect.x+textRect.width-5,
-                 textRect.y+textRect.height-maxAscent, charWidth+2, maxAscent-1);
-      xRect = new Rectangle(textRect.x+textRect.width-5,
-                 textRect.y+textRect.height-maxAscent, charWidth+2, maxAscent-1);
-      g.setFont(f);
-      
-    }
-  
-    public class MyMouseHandler extends MouseAdapter {
-        public void mousePressed(MouseEvent e) {
-            //System.out.println(e);
-            if (xRect.contains(e.getPoint())) {
-               JTabbedPane tabPane = (JTabbedPane)e.getSource();
-               int tabIndex = tabForCoordinate(tabPane, e.getX(), e.getY());
+	Rectangle xRect;
 
-               if(tabPane.getComponentAt(tabIndex)!=null)
-            	   ((TabPanel)tabPane.getComponentAt(tabIndex)).disconnect();
-               tabPane.remove(tabIndex);
-            }
-        }
-    }
-    
-    protected int calculateTabHeight(int tabPlacement, int tabIndex, int fontHeight) {
-        return 25; // manipulate this number however you please.
-    }
-    
-    protected int calculateTabWidth(int tabPlacement, int tabIndex, int fontHeight) {
-        return 20; // manipulate this number however you please.
-    }
+	protected void installListeners() {
+		super.installListeners();
+		tabPane.addMouseListener(new MyMouseHandler());
+
+	}
+
+	protected void paintTab(Graphics g, int tabPlacement,
+			Rectangle[] rects, int tabIndex,
+			Rectangle iconRect, Rectangle textRect) {
+		super.paintTab(g, tabPlacement, rects, tabIndex, iconRect, textRect);
+
+		Font f = g.getFont();
+		g.setFont(new Font("Courier", Font.BOLD, 10));
+		FontMetrics fm = g.getFontMetrics(g.getFont());
+		int charWidth = fm.charWidth('x');
+		int maxAscent = fm.getMaxAscent();
+		g.drawString("x", textRect.x + textRect.width - 3, textRect.y + textRect.height - 3);
+		g.drawRect(textRect.x+textRect.width-5,
+				textRect.y+textRect.height-maxAscent, charWidth+2, maxAscent-1);
+		xRect = new Rectangle(textRect.x+textRect.width-5,
+				textRect.y+textRect.height-maxAscent, charWidth+2, maxAscent-1);
+		g.setFont(f);
+
+	}
+
+	public class MyMouseHandler extends MouseAdapter {
+		public void mousePressed(MouseEvent e) {
+			//System.out.println(e);
+			if (xRect.contains(e.getPoint())) {
+				JTabbedPane tabPane = (JTabbedPane)e.getSource();
+				int tabIndex = tabForCoordinate(tabPane, e.getX(), e.getY());
+
+				if(tabPane.getComponentAt(tabIndex)!=null)
+					((TabPanel)tabPane.getComponentAt(tabIndex)).disconnect();
+				tabPane.remove(tabIndex);
+			}
+		}
+	}
+
+	protected int calculateTabHeight(int tabPlacement, int tabIndex, int fontHeight) {
+		return 25; // manipulate this number however you please.
+	}
+
+	protected int calculateTabWidth(int tabPlacement, int tabIndex, int fontHeight) {
+		return 20; // manipulate this number however you please.
+	}
 }

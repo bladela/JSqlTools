@@ -1,8 +1,10 @@
 package swing.workers;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
@@ -16,13 +18,20 @@ public class DbConnectionSwingWorker extends SwingWorker<ResultQueryTableModel, 
 	private List<String> sql;
 	private TabPanel panel;
 	private DatasourceDriverInt driver;
-	
+	private ResourceBundle rb;
 		
 	
 	public DbConnectionSwingWorker(TabPanel panel, DatasourceDriverInt driver)
 	{
 		this.panel=panel;
 		this.driver=driver;
+
+	}
+	
+	public void setRB(ResourceBundle rb)
+	{
+		this.rb=rb;
+		driver.setRB(rb);
 	}
 	
 	public DatasourceDriverInt getDriver()
@@ -31,43 +40,74 @@ public class DbConnectionSwingWorker extends SwingWorker<ResultQueryTableModel, 
 	}
 	
 	@Override
-    protected ResultQueryTableModel doInBackground() throws Exception {
+    protected ResultQueryTableModel doInBackground() {
 		ResultQueryTableModel model = new ResultQueryTableModel();
+		model.setRB(rb);
+		Object[] columnNames=null;
+		Object[][] datas=null;
 		System.out.println("background");
 		for (String query:sql)
 		{
-	        List<Map<String, Object>> rowData = driver.executeQuery(query);
-	        System.out.println(query);
-	        System.out.println(rowData.size());
-	        Object[] columnNames=rowData.get(0).keySet().toArray();      
+			try
+			{
+				List<Map<String, Object>> rowData = driver.executeQuery(query);
+				if(rowData.size()==0)
+		        {	
+		        	 columnNames=new Object[]{rb.getString("result")};
+		        	 datas=new Object[][]{{rb.getString("nodatafound")}};
+		        	 model.setColumnNames(columnNames);
+		        }
+		        else
+		        {
+		        	columnNames=rowData.get(0).keySet().toArray();
+		        	model.setColumnNames(columnNames);
+		        	datas=new Object[rowData.size()][model.getColumnCount()];
+					Object[] row=new Object[model.getColumnCount()];
+					int i=0,j=0;
+					/*for (Object columnName:columnNames)
+					{
+						row[j]=columnName;
+						j++;
+					}*/
+					//datas[i++]=row.clone();
+					for(Map<String,Object> riga: rowData)
+					{
+						j=0;
+						
+						for (Object columnName:columnNames)
+						{
+							if(riga.get(columnName)!=null)
+								row[j]=riga.get(columnName).toString();
+							else
+								row[j]="";
+							j++;
+						}
+						datas[i++]=row.clone();
+						
+					}
+		        }
+			}
+			catch (SQLException e)
+			{
+				 columnNames=new Object[]{rb.getString("sql.execution.error")};
+	        	 datas=new Object[][]{{e.getSQLState()+"-"+e.getErrorCode()+e.getMessage()}};
+	        	 try
+	        	 {
+	        		 driver.rollback();
+	        	 }
+	        	 catch (SQLException ex)
+	        	 {
+	        		 ex.printStackTrace();
+	        	 }
+	        	 model.setColumnNames(columnNames);
+			}
+			
+	        
 	
 	        
-	        model.setColumnNames(columnNames);
 	        
-	        Object[][] datas=new Object[rowData.size()+1][model.getColumnCount()];
-			Object[] row=new Object[model.getColumnCount()];
-			int i=0,j=0;
-			for (Object columnName:columnNames)
-			{
-				row[j]=columnName;
-				j++;
-			}
-			datas[i++]=row.clone();
-			for(Map<String,Object> riga: rowData)
-			{
-				j=0;
-				
-				for (Object columnName:columnNames)
-				{
-					if(riga.get(columnName)!=null)
-						row[j]=riga.get(columnName).toString();
-					else
-						row[j]="";
-					j++;
-				}
-				datas[i++]=row.clone();
-				
-			}
+	        
+	        
 			model.setData(datas);
 		}
         return model;

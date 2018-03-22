@@ -1,3 +1,8 @@
+22/03/2018 - Fix gestione query che non tornano risultati (Ora torna un messaggio predefinito)
+			 Fix gestione errori sql che vengono visualizzati nella tabella dei risultati
+			 Inserito supporto i18n da verificare che sia usato ovunque e mantenere
+			 Fix comportamento chiusura e disconnessione tab su pulsante exit del menu
+			 
 21/03/2018 - Fix gestione springworker che non rieseguiva dopo singola esecuzione tramite reistanza del worker. 
 			 Creato oggetto che memorizza i dati di login.
 			 Verificata compatibilità UTF8 in query e lettura

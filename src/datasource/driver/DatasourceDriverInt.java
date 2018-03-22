@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import datasource.type.DatasourceTypeInt;
 
@@ -43,9 +44,9 @@ public interface DatasourceDriverInt {
 	
 	public void disconnect();
 	
-	public void commit();
+	public void commit() throws SQLException;
 	
-	public void rollback();
+	public void rollback() throws SQLException;
 	
 	public List<Map<String, Object>> executeQuery(String sql) throws SQLException;
 	
@@ -57,6 +58,8 @@ public interface DatasourceDriverInt {
 	public List<String> getObjWords();
 	
 	public void populateObjects(String schema) throws SQLException;
+	
+	public void setRB(ResourceBundle rb);
 
 	
 

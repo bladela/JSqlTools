@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
@@ -25,6 +26,8 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -56,19 +59,19 @@ public class TabPanel extends JSplitPane {
 	JTabbedPane parent=null;
 	private DatasourceLoginInfo dbLoginInfo=null;
 	DatasourceTypeInt dbType=null;
-	
+	public final ResourceBundle rb;
 	JPanel panelText;
 	
 	
 	
-	public TabPanel(int width, int height, DatasourceTypeInt dbType, JTabbedPane parent)
+	public TabPanel(int width, int height, DatasourceTypeInt dbType, JTabbedPane parent,ResourceBundle rb)
 	{
 		super(JSplitPane.VERTICAL_SPLIT);
 		this.parent=parent;
 		//this.setSize(width, height);
 		//setDatasource(dbType);
 		this.dbType=dbType;
-		
+		this.rb=rb;
 		
 		//this.setLayout(new BorderLayout(0, 0));
 		
@@ -121,6 +124,7 @@ public class TabPanel extends JSplitPane {
 			dbDriver.setSchema(dbLoginInfo.getSchema());
 			dbDriver.connect();
 			driver=new DbConnectionSwingWorker(this,dbDriver);
+			driver.setRB(rb);
 			initFormat();
 			
 		}
@@ -228,14 +232,19 @@ public class TabPanel extends JSplitPane {
 	
 	public void updateTableData(AbstractTableModel model)
 	{
-		table.setModel(model);		
+		((ResultQueryTableModel)model).setRB(rb);
+		table.setModel(model);	
+		TableColumnModel columns=table.getColumnModel();
+		TableColumn numRiga=columns.getColumn(0);
+		numRiga.setPreferredWidth((int)(table.getWidth()*0.1f));
+		
 	}
 	
 	public void notifyNewTab()
 	{
-		TabPanel panel=new TabPanel(this.getWidth(), this.getHeight(), new Postgresql(),parent);
+		TabPanel panel=new TabPanel(this.getWidth(), this.getHeight(), new Postgresql(),parent,this.rb);
 		panel.setDbLoginInfo(this.dbLoginInfo);
-		parent.addTab("<html><body><table width='100'><tr><td><b>New Tab</b></td></tr></table></body></html>",panel);
+		parent.addTab(rb.getString("tab.defaulttitle"),panel);
 	}
 	
 	public DbConnectionSwingWorker getDatasource()
@@ -251,6 +260,7 @@ public class TabPanel extends JSplitPane {
 	protected DbConnectionSwingWorker resetSwingWorker()
 	{
 		driver=new DbConnectionSwingWorker(this,driver.getDriver());
+		driver.setRB(rb);
 		return driver;
 	}
 
