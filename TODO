@@ -1,5 +1,3 @@
 Gestione creazione e cancellazione stored procedures e altre componenti db
 Creazione dell'utente del datasource a sua scelta
 Visualizzazione oggetti del db dello schema e degli altri schemi visibili
-Gestione errori e visualizzazione a video
-Rollback automatico in caso di errori
